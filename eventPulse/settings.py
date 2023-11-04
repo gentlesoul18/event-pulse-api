@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #Third Party Library
+    'rest_framework',
+
+    # Local apps
+    'authentication',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +86,14 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.django_mongodb',
+#         'NAME': 'event-pulse',
+#         'HOST': 'localhost',
+#         'PORT': '27017'
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -99,6 +113,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# CUSTOM USER MODEL
+AUTH_USER_MODEL = "authentication.User"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
