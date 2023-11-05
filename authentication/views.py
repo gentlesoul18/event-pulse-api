@@ -1,11 +1,22 @@
+from django.forms import ValidationError
+from django.db.models import Q
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 
-from authentication.serializers import SocialLoginSerializer
+from authentication.serializers import SocialLoginSerializer, RegisterSerializer, UserSerializer
+from authentication.models import User
+from authentication.exceptions import AccountNotRegisteredException
 from authentication.utils import get_facebook_user_info, user_get_or_create, jwt_login, get_google_user_info
 
 
 # Create your views here.
+@api_view(['GET'])
+def landing_page(request):
+    return Response({"message": "This is the landing Page of Event Pulse API"})
+
+
 class FacebookLogin(APIView):
     serializer_class = SocialLoginSerializer
 
@@ -53,3 +64,41 @@ class GoogleLogin(APIView):
         token = jwt_login(response=response, user=user)
         response.data = {**user_data, "token": token}
         return response
+
+
+@api_view(['POST'])
+def register_user(request):
+    serializer = RegisterSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    serializer.save()
+    user_data = serializer.data
+    user = User.objects.get(email=user_data["email"])
+    token = user.token()
+    response = Response()
+    response.data = {**user_data, "access_token": token}
+    return response
+
+
+@api_view(['POST'])
+def sign_in(request):
+    username = request.data["username"]
+    password = request.data["password"]
+    try:
+        user = User.objects.get(Q(username=username.lower()) | Q(email=username))
+    except AccountNotRegisteredException as e:
+        raise e.default_detail
+        # raise ValidationError({"message": "This user does not exist"})
+
+    if not user.check_password(password):
+        raise ValidationError({"message": "Incorrect Password!"})
+
+    serializer = UserSerializer(user)
+
+    response = Response()
+    token = user.token()
+    response.set_cookie(
+        key="jwt", value=token, httponly=True
+    )  # creates cookies for user session
+    response.data = {"access_token": token, **serializer.data}
+    return response

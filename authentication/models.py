@@ -16,6 +16,7 @@ class User(AbstractUser):
     user_type = models.CharField(
         max_length=15, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
     )
+    
 
     USERNAME_FIELD = "username"
 
@@ -28,5 +29,4 @@ class User(AbstractUser):
 
     def token(self):
         access = AccessToken.for_user(self)
-        refresh = RefreshToken.for_user(self)
-        return f"refresh_token:  {refresh}    access_token: {access}"
+        return str(access)
