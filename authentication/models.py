@@ -7,14 +7,14 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 # Create your models here.
 class User(AbstractUser):
     USER_TYPE = (
-        ("A", "ADMIN"),
-        ("O", "ORGANIZER"),
-        ("U", "USER"),
+        ("A", "Admin"),
+        ("O", "Organizer"),
+        ("At", "Attendee"),
     )
     username = models.CharField(max_length=50, unique=True, null=True, blank=True)
     email = models.CharField(max_length=255, null=True, blank=True)
     user_type = models.CharField(
-        max_length=15, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
+        max_length=2, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
     )
     
 
