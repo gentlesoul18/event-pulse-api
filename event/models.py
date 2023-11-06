@@ -13,7 +13,7 @@ class Event(models.Model):
         ('O', 'Other')
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="events")
-    title = models.CharField(max_length=50)
+    title = models.CharField(max_length=50, unique=True)
     description = models.TextField()
     event_type = models.CharField(max_length=1, choices=EVENT_TYPE, default=EVENT_TYPE[2])
     date = models.DateField()
@@ -22,3 +22,7 @@ class Event(models.Model):
     is_verified = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
+
+
+    def __str__(self) -> str:
+        return self.title
