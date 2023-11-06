@@ -22,5 +22,5 @@ urlpatterns = [
     path('', views.landing_page, name="landing-page"),
     path('admin/', admin.site.urls),
     path('auth/', include('authentication.urls')),
-    path('api/', include('api.urls')),
+    path('event/', include('event.urls')),
 ]

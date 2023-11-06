@@ -43,7 +43,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'authentication',
-    'api',
+    'event',
 ]
 
 MIDDLEWARE = [
