@@ -20,6 +20,7 @@ class Event(models.Model):
     time = models.TimeField()
     location = models.CharField(max_length=255)
     is_verified = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
 

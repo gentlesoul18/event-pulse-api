@@ -4,4 +4,5 @@ from event import views
 urlpatterns = [
     path('create', views.create_event, name='create'),
     path('', views.get_events, name="get-events"),
+    path('<int:id>', views.get_event, name="get-event")
 ]
