@@ -65,7 +65,7 @@ def update_event(request):
             status.HTTP_403_FORBIDDEN,
         )
     data = request.body
-    id = data["id"]
+    id = request.GET["id"]
     event = Event.objects.get(id=id)
     serializer = EventSerializer(event, data=data, partial=True)
     return Response(serializer.data, status.HTTP_206_PARTIAL_CONTENT)
@@ -73,14 +73,14 @@ def update_event(request):
 
 @api_view(["DELETE"])
 @permission_classes(IsAuthenticated)
-def delete_event(request, kwargs):
+def delete_event(request):
     user = request.user
     if user.user_type == "At":
         return Response(
             {"message": "You dont have access to this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = kwargs["id"]
+    id = request.GET["id"]
     event = Event.objects.get(id=id)
     if event.is_deleted == True:
         return Response(
@@ -93,14 +93,14 @@ def delete_event(request, kwargs):
 
 @api_view(["PATCH"])
 @permission_classes(IsAuthenticated)
-def verify_event(request, kwargs):
+def verify_event(request):
     user = request.user
     if user.user_type != "A":
         return Response(
             {"message": "You dont have access to perform this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = kwargs["id"]
+    id = request.GET["id"]
     event = Event.objects.get(id=id)
     if event.is_verified == True:
         return Response(
@@ -113,14 +113,14 @@ def verify_event(request, kwargs):
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-def restore_event(request, kwargs):
+def restore_event(request):
     user = request.user
     if user.user_type == "At":
         return Response(
             {"message": "You dont have access to this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = kwargs["id"]
+    id = request.GET["id"]
     event = Event.objects.get(id=id)
     if event.is_deleted == False:
         return Response(
