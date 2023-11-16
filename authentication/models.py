@@ -16,7 +16,6 @@ class User(AbstractUser):
     user_type = models.CharField(
         max_length=2, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
     )
-    
 
     USERNAME_FIELD = "username"
 
@@ -30,3 +29,15 @@ class User(AbstractUser):
     def token(self):
         access = AccessToken.for_user(self)
         return str(access)
+
+
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="profile")
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    contact = models.TextField()
+    
+
+
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"

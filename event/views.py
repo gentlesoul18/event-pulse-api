@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Q
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -30,58 +31,97 @@ def create_event(request):
 @permission_classes([IsAuthenticated])
 def get_events(request):
     user = request.user
+    date = request.GET.get(
+        "date",
+    )
+    location = request.GET.get("location", None)
+    event_type = request.GET.get("event_type", None)
     if user.user_type == "At":
         return Response(
             {"message": "you dont have access to this action"},
             status=status.HTTP_403_FORBIDDEN,
         )
-    events = Event.objects.all()
+    if not (date and event_type and request):
+        events = Event.objects.all().filter(is_deleted=False)
+    elif date and event_type and location:
+        events = Event.objects.all().filter(
+            date=date, event_type=event_type, location=location, is_deleted=False
+        )
+    elif (event_type and location) or (event_type and date) or (date and location):
+        events = Event.objects.all().filter(
+            Q(event_type=event_type, location=location)
+            | Q(date=date, location=location)
+            | Q(date=date, event_type=event_type),
+            is_deleted=False,
+        )
+    elif event_type or location or date:
+        events = Event.objects.all().filter(
+            Q(date=date) | Q(event_type=event_type) | Q(location=location),
+            is_deleted=False,
+        )
+
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data, status.HTTP_200_OK)
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_event(request):
+def get_event(request, id):
     user = request.user
     if user.user_type == "At":
         return Response(
-            {"message": "Yo dont have access to this action"},
+            {"message": "Yous dont have access to this action"},
             status=status.HTTP_403_FORBIDDEN,
         )
-    id = request.GET.get("id")
-    event = Event.objects.get(id=id).filter(active=True)
+    try:
+        event = Event.objects.get(id=id, is_deleted=False)
+    except Event.DoesNotExist:
+        return Response(
+            {"message": "Event does not exist"}, status=status.HTTP_404_NOT_FOUND
+        )
     serializer = EventSerializer(event)
     return Response(serializer.data, status.HTTP_200_OK)
 
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-def update_event(request):
+def update_event(request, id):
     user = request.user
     if user.user_type == "At":
         return Response(
             {"message": "You dont have access to this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    data = request.body
-    id = request.GET["id"]
-    event = Event.objects.get(id=id)
+    data = request.data
+    try:
+        event = Event.objects.get(id=id)
+    except Event.DoesNotExist:
+        return Response(
+            {"message": "Event does not exist"}, status=status.HTTP_404_NOT_FOUND
+        )
+
     serializer = EventSerializer(event, data=data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
     return Response(serializer.data, status.HTTP_206_PARTIAL_CONTENT)
 
 
 @api_view(["DELETE"])
-@permission_classes(IsAuthenticated)
-def delete_event(request):
+@permission_classes([IsAuthenticated])
+def delete_event(request, id):
     user = request.user
     if user.user_type == "At":
         return Response(
             {"message": "You dont have access to this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = request.GET["id"]
-    event = Event.objects.get(id=id)
+    try:
+        event = Event.objects.get(id=id, is_deleted=False)
+    except Event.DoesNotExist:
+        return Response(
+            {"message": "Event does not exist"}, status=status.HTTP_404_NOT_FOUND
+        )
+
     if event.is_deleted == True:
         return Response(
             {"message": "Event already deleted"}, status.HTTP_208_ALREADY_REPORTED
@@ -92,16 +132,21 @@ def delete_event(request):
 
 
 @api_view(["PATCH"])
-@permission_classes(IsAuthenticated)
-def verify_event(request):
+@permission_classes([IsAuthenticated])
+def verify_event(request, id):
     user = request.user
     if user.user_type != "A":
         return Response(
             {"message": "You dont have access to perform this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = request.GET["id"]
-    event = Event.objects.get(id=id)
+    try:
+        event = Event.objects.get(id=id, is_deleted=False)
+    except Event.DoesNotExist:
+        return Response(
+            {"message": "Event does not exist"}, status=status.HTTP_404_NOT_FOUND
+        )
+
     if event.is_verified == True:
         return Response(
             {"message": "Event already verified"}, status.HTTP_208_ALREADY_REPORTED
@@ -113,15 +158,20 @@ def verify_event(request):
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-def restore_event(request):
+def restore_event(request, id):
     user = request.user
     if user.user_type == "At":
         return Response(
             {"message": "You dont have access to this action"},
             status.HTTP_403_FORBIDDEN,
         )
-    id = request.GET["id"]
-    event = Event.objects.get(id=id)
+    try:
+        event = Event.objects.get(id=id)
+    except Event.DoesNotExist:
+        return Response(
+            {"message": "Event does not exist"}, status=status.HTTP_404_NOT_FOUND
+        )
+
     if event.is_deleted == False:
         return Response(
             {"message": "Event not deleted"}, status.HTTP_208_ALREADY_REPORTED
@@ -129,3 +179,37 @@ def restore_event(request):
     event.is_deleted = False
     event.save()
     return Response({"message": "Event restored"}, status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+def search_event(request):
+    event = Event.objects.get(id=id)
+    pass
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_verified_events(request):
+    user = request.user
+    if user.user_type != "A":
+        return Response(
+            {"message": "You dont have access to perform this action"},
+            status.HTTP_403_FORBIDDEN,
+        )
+    events = Event.objects.all().filter(is_verified=True)
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data, status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_deleted_events(request):
+    user = request.user
+    if user.user_type != "A":
+        return Response(
+            {"message": "You dont have access to perform this action"},
+            status.HTTP_403_FORBIDDEN,
+        )
+    events = Event.objects.all().filter(is_deleted=True)
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data, status.HTTP_200_OK)
