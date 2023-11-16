@@ -7,14 +7,14 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 # Create your models here.
 class User(AbstractUser):
     USER_TYPE = (
-        ("A", "ADMIN"),
-        ("O", "ORGANIZER"),
-        ("U", "USER"),
+        ("A", "Admin"),
+        ("O", "Organizer"),
+        ("At", "Attendee"),
     )
     username = models.CharField(max_length=50, unique=True, null=True, blank=True)
     email = models.CharField(max_length=255, null=True, blank=True)
     user_type = models.CharField(
-        max_length=15, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
+        max_length=2, choices=USER_TYPE, default=USER_TYPE[2], null=True, blank=True
     )
 
     USERNAME_FIELD = "username"
@@ -28,5 +28,16 @@ class User(AbstractUser):
 
     def token(self):
         access = AccessToken.for_user(self)
-        refresh = RefreshToken.for_user(self)
-        return f"refresh_token:  {refresh}    access_token: {access}"
+        return str(access)
+
+
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="profile")
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    contact = models.TextField()
+    
+
+
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"

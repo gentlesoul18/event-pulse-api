@@ -192,14 +192,14 @@ def user_get_or_create(email, first_name, last_name) -> Tuple[User, bool]:
         email = first_name.lower()+last_name.lower()+"@x.com"
     else:
         email = email
-    user = User.objects.filter(username=email).first()
+    user = User.objects.filter(email=email).first()
 
     # after querying user from database, if user exist, it return user
     if user:
         return user
 
     # else it creates the user with the info that we got from the user's mail
-    user = user_create(first_name = first_name, last_name = last_name, username = email, email = email)
+    user = user_create(username = f"{first_name.lower()} {last_name.lower()}", email = email)
     return user
 
 
